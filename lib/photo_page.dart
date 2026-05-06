@@ -1,50 +1,52 @@
-import 'dart:convert' ;
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 enum PhotoType { dog, landscapes }
+
 class PhotoPage extends StatefulWidget {
   const PhotoPage({super.key});
 
   @override
-  State<PhotoPage> createState() => _PhotoPageState();
+  State<PhotoPage> createState() =>
+      _PhotoPageState();
 }
+
 class _PhotoPageState extends State<PhotoPage> {
+  final List<String> _localPhotos = [
+    'assets/images/photo1.jpg',
+    'assets/images/photo2.jpg',
+    'assets/images/photo3.jpg',
+  ];
   String? _imageUrl;
   bool _isLoading = false;
   String? _errorMessage;
   PhotoType _animalType = PhotoType.dog;
   Future<void> _fetchPhoto() async {
     setState(() {
-       _isLoading = true;
-       _errorMessage = null;
-       _imageUrl = null;
+      _isLoading = true;
+      _errorMessage = null;
+      _imageUrl = null;
     });
     try {
-      String url;
-      http. Response response;
-
-      if (_animalType == PhotoType.dog) {
-        url = 'https://dog.ceo/api/breeds/image/random';
-        response = await http.get(Uri.parse(url));
-        Map<String, dynamic> data = jsonDecode(
-          response.body,
-        ); 
-        _imageUrl = data['message'];
-      } else {
-        final random =
-            DateTime.now().millisecondsSinceEpoch;
-        _imageUrl = 'https://picsum.photos/seed/$random/800/800';
-      }
+      await Future.delayed(
+        const Duration(seconds: 2),
+      );
+      final randomIndex =
+          DateTime.now().millisecondsSinceEpoch %
+          _localPhotos.length;
+      _imageUrl = _localPhotos[randomIndex];
     } catch (e) {
-      _errorMessage = 'Не удалось загрузить фото. \nПроверьте подключение к интернету.';
+      _errorMessage = 'Ошибка загрузки фото';
     }
 
     setState(() {
       _isLoading = false;
     });
+  }
+
   @override
-  Widget build(BuildContext context)  {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Фото дня'),
@@ -63,31 +65,34 @@ class _PhotoPageState extends State<PhotoPage> {
       ),
     );
   }
+
   Widget _buildAnimalToggle() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ChoiceChip(
           label: const Text('🐶 Собаки'),
-          selected: _animalType ==  PhotoType.dog,
+          selected: _animalType == PhotoType.dog,
           onSelected: (selected) {
             if (selected) {
               setState(() {
                 _animalType = PhotoType.dog;
                 _imageUrl = null;
-                _errorMessage = null; 
+                _errorMessage = null;
               });
             }
           },
-        )
+        ),
         const SizedBox(width: 12),
         ChoiceChip(
           label: const Text('🌆 Пейзаж'),
-          selected: _animalType == PhotoType.landscapes,
+          selected:
+              _animalType == PhotoType.landscapes,
           onSelected: (selected) {
             if (selected) {
               setState(() {
-                _animalType = PhotoType.landscapes;
+                _animalType =
+                    PhotoType.landscapes;
                 _imageUrl = null;
                 _errorMessage = null;
               });
@@ -97,10 +102,13 @@ class _PhotoPageState extends State<PhotoPage> {
       ],
     );
   }
+
   Widget _buildContent() {
     if (_isLoading) {
       return const Expanded(
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -124,11 +132,13 @@ class _PhotoPageState extends State<PhotoPage> {
     if (_imageUrl != null) {
       return Expanded(
         child: Padding(
-          padding: const EdgeInserts.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: 16,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              16,
+            ),
             child: Image.network(
               _imageUrl!,
               fit: BoxFit.cover,
@@ -138,3 +148,38 @@ class _PhotoPageState extends State<PhotoPage> {
         ),
       );
     }
+
+    return const Expanded(
+      child: Center(
+        child: Text(
+          'Нажмите кнопку\nчтобы загрузить фото',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.grey,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton() {
+    String label = _animalType == PhotoType.dog
+        ? '🐶 Новая собака'
+        : '🌆 Новый пейзаж';
+
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _fetchPhoto,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 12,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+}
